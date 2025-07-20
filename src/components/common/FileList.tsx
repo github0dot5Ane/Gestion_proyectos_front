@@ -1,26 +1,48 @@
 // src/components/common/FileList.tsx
 import React, { useState } from 'react';
-import { ProjectFile, TaskFile } from '../../types'; // Usar tipo unión o genérico si es necesario
+import { ProjectFile, TaskFile } from '../../types';
 
-// Helper para obtener un icono simple basado en tipo
-const getFileIcon = (mimeType: string): string => {
-    if (mimeType.includes('pdf')) return '📄'; // PDF
-    if (mimeType.includes('word')) return '📝'; // DOC/DOCX
-    if (mimeType.includes('image')) return '🖼️'; // JPG/Image
-    return '📁'; // Default
+// Tipos de archivo permitidos
+const ALLOWED_FILE_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/jpeg',
+    'image/jpg'
+];
+
+// Helper para obtener icono y verificar tipo permitido
+const getFileInfo = (mimeType: string) => {
+    const isAllowed = ALLOWED_FILE_TYPES.includes(mimeType.toLowerCase());
+    
+    if (!isAllowed) return { icon: '⛔', allowed: false };
+    
+    if (mimeType.includes('pdf')) return { icon: '📄', allowed: true }; // PDF
+    if (mimeType.includes('word') || mimeType.includes('msword') || mimeType.includes('wordprocessingml')) 
+        return { icon: '📝', allowed: true }; // DOC/DOCX
+    if (mimeType.includes('jpeg') || mimeType.includes('jpg')) 
+        return { icon: '🖼️', allowed: true }; // JPG
+    
+    return { icon: '📁', allowed: false }; // Default (no permitido)
 };
 
 interface FileListProps {
     files: (ProjectFile | TaskFile)[];
     onDownload: (fileId: number, filename: string) => Promise<void>;
     onDelete: (fileId: number) => Promise<void>;
-    canDelete?: (file: ProjectFile | TaskFile) => boolean; // Función para determinar si se puede borrar
-    isLoading?: boolean; // Para indicar carga/eliminación
+    canDelete?: (file: ProjectFile | TaskFile) => boolean;
+    isLoading?: boolean;
     error?: string | null;
 }
 
 const FileList: React.FC<FileListProps> = ({ files, onDownload, onDelete, canDelete, isLoading, error }) => {
-    const [processingId, setProcessingId] = useState<number | null>(null); // ID del archivo descargando/eliminando
+    const [processingId, setProcessingId] = useState<number | null>(null);
+
+    // Filtrar solo archivos permitidos
+    const allowedFiles = files.filter(file => {
+        const fileInfo = getFileInfo(file.tipo_archivo);
+        return fileInfo.allowed;
+    });
 
     const handleDownloadClick = async (fileId: number, filename: string) => {
         setProcessingId(fileId);
@@ -42,7 +64,6 @@ const FileList: React.FC<FileListProps> = ({ files, onDownload, onDelete, canDel
             setProcessingId(fileId);
             try {
                 await onDelete(fileId);
-                // La actualización de la lista la maneja el componente padre
             } catch (err: unknown) {
                 if (err instanceof Error) {
                     alert(`Error al eliminar: ${err.message || 'Error desconocido'}`);
@@ -55,39 +76,87 @@ const FileList: React.FC<FileListProps> = ({ files, onDownload, onDelete, canDel
         }
     };
 
-    if (isLoading) return <p className="text-sm text-gray-500">Cargando archivos...</p>;
-    if (error) return <p className="text-sm text-red-500">Error al cargar archivos: {error}</p>;
-    if (!files || files.length === 0) return <p className="text-sm text-gray-500">No hay archivos asociados.</p>;
+    if (isLoading) {
+        return (
+            <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-indigo-500"></div>
+            </div>
+        );
+    }
+    
+    if (error) {
+        return (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                <div className="flex">
+                    <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                    <div className="ml-3">
+                        <p className="text-sm text-red-700">Error al cargar archivos: {error}</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!files || allowedFiles.length === 0) {
+        return (
+            <div className="text-center py-4 text-gray-500">
+                <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                </svg>
+                <p className="mt-2 text-sm">
+                    {files?.length > 0 
+                        ? "No hay archivos permitidos (solo PDF, DOC/DOCX, JPG)" 
+                        : "No hay archivos asociados"}
+                </p>
+            </div>
+        );
+    }
 
     return (
-        <ul className="divide-y divide-gray-200 border border-gray-200 rounded-md">
-            {files.map((file) => {
-                const showDelete = canDelete ? canDelete(file) : false; // Determinar si se puede borrar
+        <ul className="divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden">
+            {allowedFiles.map((file) => {
+                const showDelete = canDelete ? canDelete(file) : false;
                 const isProcessing = processingId === file.id;
+                const fileInfo = getFileInfo(file.tipo_archivo);
+
                 return (
-                    <li key={file.id} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm hover:bg-gray-50">
-                        <div className="w-0 flex-1 flex items-center">
-                            <span className='mr-2 text-xl'>{getFileIcon(file.tipo_archivo)}</span>
-                            <span className="ml-2 flex-1 w-0 truncate">{file.nombre_original}</span>
-                            <span className='ml-2 text-gray-400 text-xs'>({(file.tamano ? file.tamano / 1024 : 0).toFixed(1)} KB)</span>
+                    <li key={file.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors duration-150">
+                        <div className="flex items-center min-w-0">
+                            <span className="text-xl mr-3">{fileInfo.icon}</span>
+                            <div className="min-w-0">
+                                <p className="font-bold text-gray-800 truncate">
+                                    {file.nombre_original}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {file.tipo_archivo} • {(file.tamano ? file.tamano / 1024 : 0).toFixed(1)} KB
+                                </p>
+                            </div>
                         </div>
-                        <div className="ml-4 flex-shrink-0 space-x-2">
+                        <div className="ml-4 flex-shrink-0 flex space-x-3">
                             <button
                                 onClick={() => handleDownloadClick(file.id, file.nombre_original)}
                                 disabled={isProcessing}
-                                className="font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+                                className="text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
                                 title="Descargar"
                             >
-                                {isProcessing ? '...' : '↓'}
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
                             </button>
                             {showDelete && (
                                 <button
                                     onClick={() => handleDeleteClick(file.id)}
                                     disabled={isProcessing}
-                                    className="font-medium text-red-600 hover:text-red-500 disabled:opacity-50"
+                                    className="text-red-600 hover:text-red-800 disabled:opacity-50"
                                     title="Eliminar"
                                 >
-                                    {isProcessing ? '...' : '🗑️'}
+                                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
                                 </button>
                             )}
                         </div>
