@@ -58,7 +58,7 @@ const MyTasksPage: React.FC = () => {
             <div className="bg-white shadow overflow-hidden sm:rounded-lg">
                 {status === 'loading' && tasks.length === 0 ? (
                     <div className="flex justify-center items-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                        <div data-testid="spinner"  className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
                     </div>
                 ) : (
                     <>
