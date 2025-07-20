@@ -145,9 +145,11 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, error }) => {
                                             'bg-gray-100 text-gray-800 border-gray-200'
                                         } disabled:opacity-60`}
                                     >
-                                        {taskStatuses.map(s => (
-                                            <option key={s} value={s}>{s}</option>
-                                        ))}
+                                        {tasks.map((task, index) => (
+                                                <div key={index}>
+                                                {task?.titulo || 'Sin título'}
+                                                </div>
+                                            ))}
                                     </select>
 
                                     {/* Botones de acción */}

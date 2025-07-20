@@ -17,17 +17,17 @@ const getFileInfo = (mimeType: string) => {
     
     if (!isAllowed) return { icon: '⛔', allowed: false };
     
-    if (mimeType.includes('pdf')) return { icon: '📄', allowed: true }; // PDF
+    if (mimeType.includes('pdf')) return { icon: '📄', allowed: true };
     if (mimeType.includes('word') || mimeType.includes('msword') || mimeType.includes('wordprocessingml')) 
-        return { icon: '📝', allowed: true }; // DOC/DOCX
+        return { icon: '📝', allowed: true };
     if (mimeType.includes('jpeg') || mimeType.includes('jpg')) 
-        return { icon: '🖼️', allowed: true }; // JPG
+        return { icon: '🖼️', allowed: true };
     
-    return { icon: '📁', allowed: false }; // Default (no permitido)
+    return { icon: '📁', allowed: false };
 };
 
 interface FileListProps {
-    files: (ProjectFile | TaskFile)[];
+    files?: (ProjectFile | TaskFile)[];
     onDownload: (fileId: number, filename: string) => Promise<void>;
     onDelete: (fileId: number) => Promise<void>;
     canDelete?: (file: ProjectFile | TaskFile) => boolean;
@@ -35,10 +35,16 @@ interface FileListProps {
     error?: string | null;
 }
 
-const FileList: React.FC<FileListProps> = ({ files, onDownload, onDelete, canDelete, isLoading, error }) => {
+const FileList: React.FC<FileListProps> = ({
+    files = [], // ✅ Valor por defecto agregado aquí
+    onDownload,
+    onDelete,
+    canDelete,
+    isLoading,
+    error
+}) => {
     const [processingId, setProcessingId] = useState<number | null>(null);
 
-    // Filtrar solo archivos permitidos
     const allowedFiles = files.filter(file => {
         const fileInfo = getFileInfo(file.tipo_archivo);
         return fileInfo.allowed;
@@ -83,7 +89,7 @@ const FileList: React.FC<FileListProps> = ({ files, onDownload, onDelete, canDel
             </div>
         );
     }
-    
+
     if (error) {
         return (
             <div className="bg-red-50 border-l-4 border-red-500 p-4">

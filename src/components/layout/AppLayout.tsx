@@ -20,7 +20,7 @@ const AppLayout: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
-            {/* Header / Navbar - Más profesional con mejor jerarquía visual */}
+            {/* Header / Navbar */}
             <header className="bg-white shadow-sm border-b border-gray-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
@@ -63,7 +63,7 @@ const AppLayout: React.FC = () => {
 
                         {/* Área de usuario */}
                         <div className="flex items-center space-x-4">
-                            {user && (
+                            {user && user.nombre && (
                                 <div className="hidden md:flex items-center">
                                     <div className="flex items-center justify-center h-8 w-8 rounded-full bg-indigo-100 text-indigo-800 font-medium">
                                         {user.nombre.charAt(0).toUpperCase()}
@@ -73,22 +73,22 @@ const AppLayout: React.FC = () => {
                                     </span>
                                 </div>
                             )}
-                            
+
                             <button
                                 onClick={handleLogout}
                                 className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                             >
                                 Cerrar Sesión
-                            <svg className="ml-1 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
+                                <svg className="ml-1 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
                             </button>
                         </div>
                     </div>
                 </div>
             </header>
 
-            {/* Main Content - Más espacio y mejor organización */}
+            {/* Main Content */}
             <main className="flex-grow">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -97,7 +97,7 @@ const AppLayout: React.FC = () => {
                 </div>
             </main>
 
-            {/* Footer - Más profesional */}
+            {/* Footer */}
             <footer className="bg-white border-t border-gray-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <div className="flex flex-col md:flex-row justify-between items-center">

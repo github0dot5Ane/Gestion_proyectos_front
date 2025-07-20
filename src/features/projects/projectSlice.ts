@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axiosInstance from "../../api/axios";
 import { Project, ProjectState, ProjectFormData } from "../../types";
 import { AxiosError } from "axios";
-import { RootState } from "../../app/store"; // Importar RootState
+import { RootState } from "../../app/store";
 
 const initialState: ProjectState = {
   projects: [],
@@ -14,17 +14,15 @@ const initialState: ProjectState = {
 
 // --- Thunks ---
 
-// Fetch all projects (puede aceptar filtros como query params en el futuro)
 export const fetchProjects = createAsyncThunk<
   Project[],
   void,
   { rejectValue: string }
 >("projects/fetchProjects", async (_, { rejectWithValue }) => {
   try {
-    const response = await axiosInstance.get<{ data: Project[] }>("/projects"); // Asumiendo paginación o Resource Collection
+    const response = await axiosInstance.get<{ data: Project[] }>("/projects");
     return response.data.data;
   } catch (err) {
-    /* ... manejo de error similar a fetchUsers ... */
     const error = err as AxiosError;
     const message =
       (error.response?.data as { message?: string })?.message || error.message;
@@ -32,20 +30,17 @@ export const fetchProjects = createAsyncThunk<
   }
 });
 
-// Fetch single project by ID
 export const fetchProjectById = createAsyncThunk<
   Project,
   string,
   { rejectValue: string }
 >("projects/fetchProjectById", async (projectId, { rejectWithValue }) => {
-  // ID es string por URL param
   try {
     const response = await axiosInstance.get<{ data: Project }>(
       `/projects/${projectId}`
-    ); // Asumiendo API Resource
+    );
     return response.data.data;
   } catch (err) {
-    /* ... manejo de error ... */
     const error = err as AxiosError;
     const message =
       (error.response?.data as { message?: string })?.message || error.message;
@@ -53,7 +48,6 @@ export const fetchProjectById = createAsyncThunk<
   }
 });
 
-// Create new project (Admin only)
 export const createProject = createAsyncThunk<
   Project,
   ProjectFormData,
@@ -61,7 +55,6 @@ export const createProject = createAsyncThunk<
 >(
   "projects/createProject",
   async (projectData, { rejectWithValue, getState }) => {
-    // Opcional: verificar rol de admin desde el estado
     if (!getState().auth.user?.admin)
       return rejectWithValue("Acción no autorizada");
     try {
@@ -71,7 +64,6 @@ export const createProject = createAsyncThunk<
       );
       return response.data.data;
     } catch (err) {
-      /* ... manejo de error (incluir validación 422) ... */
       const error = err as AxiosError;
       let errorMessage = "Error al crear el proyecto.";
       if (error.response) {
@@ -94,23 +86,19 @@ export const createProject = createAsyncThunk<
   }
 );
 
-// Update project (Admin or RP)
 export const updateProject = createAsyncThunk<
   Project,
-  { projectId: string; projectData: Partial<ProjectFormData> }, // Partial permite actualizar solo algunos campos
+  { projectId: string; projectData: Partial<ProjectFormData> },
   { rejectValue: string; state: RootState }
 >(
   "projects/updateProject",
   async ({ projectId, projectData }, { rejectWithValue, getState }) => {
-    // Opcional: verificar rol (Admin o RP del proyecto)
     const user = getState().auth.user;
-    const project = getState().projects.currentProject; // Asume que currentProject está cargado
+    const project = getState().projects.currentProject;
     if (!user || (!user.admin && user.id !== project?.id_responsable)) {
-      // Comentado temporalmente si currentProject no está siempre disponible
       // return rejectWithValue('Acción no autorizada');
     }
-    console.warn("Authorization check for update temporarily simplified."); // Aviso temporal
-
+    console.warn("Authorization check for update temporarily simplified.");
     try {
       const response = await axiosInstance.put<{ data: Project }>(
         `/projects/${projectId}`,
@@ -118,9 +106,7 @@ export const updateProject = createAsyncThunk<
       );
       return response.data.data;
     } catch (err) {
-      /* ... manejo de error ... */
       const error = err as AxiosError;
-      // ... (manejo similar a createProject) ...
       let errorMessage = "Error al actualizar el proyecto.";
       if (error.response) {
         const responseData = error.response.data as {
@@ -142,22 +128,19 @@ export const updateProject = createAsyncThunk<
   }
 );
 
-// Delete project (Admin only)
 export const deleteProject = createAsyncThunk<
   string,
   string,
   { rejectValue: string; state: RootState }
->( // Devuelve el ID del proyecto eliminado
+>(
   "projects/deleteProject",
   async (projectId, { rejectWithValue, getState }) => {
-    // Opcional: verificar rol de admin
     if (!getState().auth.user?.admin)
       return rejectWithValue("Acción no autorizada");
     try {
       await axiosInstance.delete(`/projects/${projectId}`);
-      return projectId; // Devolver ID para eliminar de la lista en el state
+      return projectId;
     } catch (err) {
-      /* ... manejo de error ... */
       const error = err as AxiosError;
       const message =
         (error.response?.data as { message?: string })?.message ||
@@ -170,14 +153,14 @@ export const deleteProject = createAsyncThunk<
 );
 
 // --- Slice Definition ---
+
 const projectSlice = createSlice({
   name: "projects",
   initialState,
   reducers: {
-    // Limpiar proyecto actual al salir de la página de detalles, por ejemplo
     clearCurrentProject: (state) => {
       state.currentProject = null;
-      state.status = "idle"; // Reset status? Depende del flujo deseado
+      state.status = "idle";
       state.error = null;
     },
     clearProjectError: (state) => {
@@ -187,7 +170,6 @@ const projectSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // fetchProjects
       .addCase(fetchProjects.pending, (state) => {
         state.status = "loading";
       })
@@ -203,12 +185,11 @@ const projectSlice = createSlice({
         state.status = "failed";
         state.error = action.payload;
       })
-      // fetchProjectById
       .addCase(fetchProjectById.pending, (state) => {
         state.status = "loading";
         state.currentProject = null;
         state.error = null;
-      }) // Limpiar al empezar a cargar uno nuevo
+      })
       .addCase(
         fetchProjectById.fulfilled,
         (state, action: PayloadAction<Project>) => {
@@ -220,9 +201,8 @@ const projectSlice = createSlice({
       .addCase(fetchProjectById.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
-        state.currentProject = null; // Asegurar que no quede uno viejo en caso de error
+        state.currentProject = null;
       })
-      // createProject
       .addCase(createProject.pending, (state) => {
         state.status = "loading";
         state.error = null;
@@ -231,17 +211,14 @@ const projectSlice = createSlice({
         createProject.fulfilled,
         (state, action: PayloadAction<Project>) => {
           state.status = "succeeded";
-          state.projects.push(action.payload); // Añadir el nuevo proyecto a la lista
+          state.projects.push(action.payload);
           state.error = null;
-          // Opcional: setear currentProject si se navega directo a detalles
-          // state.currentProject = action.payload;
         }
       )
       .addCase(createProject.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
       })
-      // updateProject
       .addCase(updateProject.pending, (state) => {
         state.status = "loading";
         state.error = null;
@@ -249,15 +226,14 @@ const projectSlice = createSlice({
       .addCase(
         updateProject.fulfilled,
         (state, action: PayloadAction<Project>) => {
+          if (!action.payload) return; // ✅ protección contra undefined
           state.status = "succeeded";
-          // Actualizar en la lista de proyectos
           const index = state.projects.findIndex(
             (p) => p.id === action.payload.id
           );
           if (index !== -1) {
             state.projects[index] = action.payload;
           }
-          // Actualizar el proyecto actual si es el mismo
           if (state.currentProject?.id === action.payload.id) {
             state.currentProject = action.payload;
           }
@@ -266,9 +242,8 @@ const projectSlice = createSlice({
       )
       .addCase(updateProject.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.payload;
+        state.error = action.payload ?? "Error desconocido al actualizar proyecto.";
       })
-      // deleteProject
       .addCase(deleteProject.pending, (state) => {
         state.status = "loading";
         state.error = null;
@@ -276,13 +251,10 @@ const projectSlice = createSlice({
       .addCase(
         deleteProject.fulfilled,
         (state, action: PayloadAction<string>) => {
-          // payload es projectId
           state.status = "succeeded";
-          // Eliminar de la lista
           state.projects = state.projects.filter(
             (p) => p.id !== parseInt(action.payload)
-          ); // Convertir ID a número si es necesario
-          // Limpiar si era el actual
+          );
           if (state.currentProject?.id === parseInt(action.payload)) {
             state.currentProject = null;
           }
@@ -298,7 +270,6 @@ const projectSlice = createSlice({
 
 export const { clearCurrentProject, clearProjectError } = projectSlice.actions;
 
-// Selectores
 export const selectAllProjects = (state: RootState) => state.projects.projects;
 export const selectCurrentProject = (state: RootState) =>
   state.projects.currentProject;
