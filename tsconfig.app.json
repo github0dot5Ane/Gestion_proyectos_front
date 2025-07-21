@@ -22,8 +22,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    "types": ["vitest", "vite/client","vitest/globals"]
+    "types": ["vitest", "vite/client","vitest/globals", "cypress"]
   },
-  "include": ["src", "**/*.test.ts", "**/*.test.tsx"]
+  "include": ["src", "**/*.test.ts", "**/*.test.tsx", "cypress/**/*.ts"]
 
 }
